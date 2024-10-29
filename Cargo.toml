@@ -1,0 +1,24 @@
+[package]
+name = "pumpfun-monitor"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Use latest from https://crates.io/crates/substreams
+substreams = "0.6.0"
+# Use latest from https://crates.io/crates/substreams-solana
+substreams-solana = { git = "https://github.com/streamingfast/substreams-solana", branch = "master"}
+substreams-entity-change = "2.0"
+hex = "0.4"
+bs58 = "0.5"
+anyhow = "1.0"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+
+[profile.release]
+lto = true
+opt-level = 's'
+strip = "debuginfo"

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package sf.substreams.sink.trade.v1;
+
+message TradeStats {
+    string token_address = 1;
+    string window = 2;
+    int64 net_buy_volume = 3;
+    int64 buy_volume = 4;
+    int64 sell_volume = 5;
+    int64 total_volume = 6;
+    int64 timestamp = 7;
+}
+  
+message PumpAlert {
+    string token_address = 1;
+    int64 net_buy_volume_5min = 2;
+    int64 total_volume_15min = 3;
+    int64 buy_volume_5min = 4;
+    int64 sell_volume_5min = 5;
+    double buy_pressure = 6;
+    int64 timestamp = 7;
+}
+
+message Instructions {
+    repeated Instruction instructions = 1;
+  }
+  
+  message Instruction {
+    string program_id = 1;
+    repeated string accounts = 2;
+    string data = 3;
+  }
+  
+  message Transactions {
+    repeated Transaction transactions = 1;
+  }
+  
+  message Transaction {
+    repeated string signatures = 1;
+  
+    repeated Instruction instructions = 2;
+  }

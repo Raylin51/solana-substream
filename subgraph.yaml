@@ -1,0 +1,19 @@
+specVersion: 0.0.5
+description: PumpFun Token Monitor
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: substreams
+    name: pumpfun_monitor
+    network: mainnet
+    source:
+      package:
+        moduleName: map_trades
+        file: pumpfun_monitor-v0.1.0.spkg
+    mapping:
+      kind: substreams/graph-entities
+      apiVersion: 0.0.5
+
+features:
+  - fullTextSearch
+  - nonFatalErrors

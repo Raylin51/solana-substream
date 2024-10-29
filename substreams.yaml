@@ -1,0 +1,75 @@
+specVersion: v0.1.0
+package:
+  name: pumpfun_monitor
+  version: v0.1.0
+
+imports:
+  solana: https://spkg.io/streamingfast/solana-common-v0.3.0.spkg
+
+protobuf:
+  files:
+    - trader.proto
+  importPaths:
+    - ./proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: target/wasm32-unknown-unknown/release/pumpfun_monitor.wasm
+
+modules:
+  - name: map_block_with_filtered_trades
+    kind: map
+    initialBlock: 290000000
+    inputs:
+      - params: string
+      - source: sf.solana.type.v1.Block
+    output:
+      type: proto:sf.solana.type.v1.Block
+  - name: store_token_creations
+    kind: store
+    initialBlock: 290000000
+    updatePolicy: set
+    valueType: string
+    inputs:
+      - map: map_block_with_filtered_trades
+
+  - name: map_trades
+    kind: map
+    initialBlock: 290000000
+    inputs:
+      - map: map_block_with_filtered_trades
+      - store: store_token_creations
+    output:
+      type: proto:sf.substreams.sink.entity.v1.EntityChanges
+
+  # 4. 存储处理后的交易数据
+  - name: store_trade_data
+    kind: store
+    initialBlock: 290000000
+    updatePolicy: set
+    valueType: string  # 或者根据需要选择其他类型
+    inputs:
+      - map: map_trades
+
+  # 5. 最终的统计和检查
+  - name: map_trade_stats
+    kind: map
+    initialBlock: 290000000
+    inputs:
+      - map: map_trades
+      - store: store_trade_data
+    output:
+      type: proto:sf.substreams.sink.entity.v1.EntityChanges
+
+network: solana-mainnet-beta
+
+params:
+  map_block_with_filtered_trades: program:6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P || program:675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
+
+sink:
+  module: map_trade_stats
+  type: substreams.sink.graph_out.v1
+  config:
+    schema: schema.graphql
+    mode: replace
