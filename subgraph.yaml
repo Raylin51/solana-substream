@@ -5,10 +5,10 @@ schema:
 dataSources:
   - kind: substreams
     name: pumpfun_monitor
-    network: mainnet
+    network: solana-mainnet-beta
     source:
       package:
-        moduleName: map_trades
+        moduleName: map_trade_stats
         file: pumpfun_monitor-v0.1.0.spkg
     mapping:
       kind: substreams/graph-entities

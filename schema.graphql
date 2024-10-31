@@ -1,60 +1,19 @@
-type TokenStats @entity {
-  id: ID! # 格式: {token_address}:{window}:{timestamp}
+type Trade @entity {
+  id: ID! # format: "{tokenAddress}:{type}:{timestamp}"
   tokenAddress: String!
-  window: String!            # 5min, 15min, 1hr, 4hr, 12hr
-  buyVolume: BigInt!
-  sellVolume: BigInt!
-  buySol: BigInt!
-  sellSol: BigInt!
-  totalTrades: Int!
-  uniqueBuyers: Int!
-  uniqueSellers: Int!
-  openPrice: BigDecimal!
-  closePrice: BigDecimal!
-  highPrice: BigDecimal!
-  lowPrice: BigDecimal!
-  weightedAvgPrice: BigDecimal!
-  timestamp: BigInt!
-  blockNumber: BigInt!
-}
-
-type PumpAlert @entity {
-  id: ID! # 格式: {token_address}:{timestamp}
-  tokenAddress: String!
-  buyPressure: BigDecimal!
-  priceChange: BigDecimal!
-  buyVolume: BigInt!
-  sellVolume: BigInt!
-  totalTrades: Int!
-  uniqueBuyers: Int!
-  uniqueSellers: Int!
-  timestamp: BigInt!
-  blockNumber: BigInt!
-}
-
-type Token @entity {
-  id: ID! # token_address
-  address: String!
-  name: String
-  symbol: String
-  creator: String!
-  creationTime: BigInt!
-  stats: [TokenStats!]! @derivedFrom(field: "tokenAddress")
-  alerts: [PumpAlert!]! @derivedFrom(field: "tokenAddress")
-}
-
-type TradeEvent @entity {
-  id: ID! # 格式: {tx_hash}:{log_index}
-  token: Token!
   amount: BigInt!
-  solAmount: BigInt!
-  isBuy: Boolean!
-  trader: String!
+  type: String! # "buy" or "sell"
   timestamp: BigInt!
-  virtualSolReserves: BigInt!
-  virtualTokenReserves: BigInt!
-  realSolReserves: BigInt!
-  realTokenReserves: BigInt!
-  transactionHash: String!
-  blockNumber: BigInt!
+}
+
+type TradingSignal @entity {
+  id: ID! # format: "{tokenAddress}:{timestamp}"
+  data: String! # JSON string containing TokenStats
+  tokenAddress: String!
+  timestamp: BigInt!
+  netVolume5m: BigInt!
+  totalVolume15m: BigInt!
+  latestTradeType: String!
+  latestTradeAmount: BigInt!
+  meetsCriteria: Boolean!
 }

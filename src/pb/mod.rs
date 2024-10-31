@@ -42,13 +42,6 @@ pub mod sf {
                     // @@protoc_insertion_point(sf.substreams.sink.service.v1)
                 }
             }
-            pub mod trade {
-                // @@protoc_insertion_point(attribute:sf.substreams.sink.trade.v1)
-                pub mod v1 {
-                    include!("sf.substreams.sink.trade.v1.rs");
-                    // @@protoc_insertion_point(sf.substreams.sink.trade.v1)
-                }
-            }
         }
         pub mod solana {
             // @@protoc_insertion_point(attribute:sf.substreams.solana.v1)
@@ -79,4 +72,18 @@ pub mod sol {
             // @@protoc_insertion_point(sol.transactions.v1)
         }
     }
+}
+pub mod substreams {
+    pub mod entity {
+        // @@protoc_insertion_point(attribute:substreams.entity.v1)
+        pub mod v1 {
+            include!("substreams.entity.v1.rs");
+            // @@protoc_insertion_point(substreams.entity.v1)
+        }
+    }
+}
+// @@protoc_insertion_point(attribute:trading)
+pub mod trading {
+    include!("trading.rs");
+    // @@protoc_insertion_point(trading)
 }
