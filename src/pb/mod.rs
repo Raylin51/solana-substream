@@ -6,6 +6,11 @@ pub mod google {
         // @@protoc_insertion_point(google.protobuf)
     }
 }
+// @@protoc_insertion_point(attribute:pumpfun_monitor)
+pub mod pumpfun_monitor {
+    include!("pumpfun_monitor.rs");
+    // @@protoc_insertion_point(pumpfun_monitor)
+}
 pub mod sf {
     pub mod solana {
         pub mod r#type {
@@ -35,6 +40,13 @@ pub mod sf {
             }
         }
         pub mod sink {
+            pub mod entity {
+                // @@protoc_insertion_point(attribute:sf.substreams.sink.entity.v1)
+                pub mod v1 {
+                    include!("sf.substreams.sink.entity.v1.rs");
+                    // @@protoc_insertion_point(sf.substreams.sink.entity.v1)
+                }
+            }
             pub mod service {
                 // @@protoc_insertion_point(attribute:sf.substreams.sink.service.v1)
                 pub mod v1 {
@@ -72,18 +84,4 @@ pub mod sol {
             // @@protoc_insertion_point(sol.transactions.v1)
         }
     }
-}
-pub mod substreams {
-    pub mod entity {
-        // @@protoc_insertion_point(attribute:substreams.entity.v1)
-        pub mod v1 {
-            include!("substreams.entity.v1.rs");
-            // @@protoc_insertion_point(substreams.entity.v1)
-        }
-    }
-}
-// @@protoc_insertion_point(attribute:trading)
-pub mod trading {
-    include!("trading.rs");
-    // @@protoc_insertion_point(trading)
 }

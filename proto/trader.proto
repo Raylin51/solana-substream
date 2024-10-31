@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package trading;
+package pumpfun_monitor;
 
 // 交易记录
 message Trade {

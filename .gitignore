@@ -12,3 +12,4 @@ sink-data/
 .env
 replay.log
 .DS_Store
+build/

@@ -5,7 +5,7 @@ package:
 
 imports:
   solana: https://spkg.io/streamingfast/solana-common-v0.3.0.spkg
-  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v0.2.1/substreams-entity-change-v0.2.1.spkg
+  entity: https://github.com/streamingfast/substreams-sink-entity-changes/releases/download/v2.0.0/substreams-entity-change-v2.0.0.spkg
 
 protobuf:
   files:
@@ -67,4 +67,3 @@ network: solana-mainnet-beta
 
 params:
   map_block_with_filtered_trades: program:6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P || program:675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
-  

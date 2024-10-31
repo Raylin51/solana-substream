@@ -400,19 +400,19 @@ fn calculate_volumes(trades: &[Trade]) -> (i64, i64) {
     (buy_volume, sell_volume)
 }
 
-fn get_first_trade_time(store: &StoreGetString, token_address: &str) -> Option<i64> {
-    // 先检查代币是否被跟踪
-    let token_key = format!("token:{}", token_address);
-    if store.get_at(0, &token_key).is_none() {
-        return None;
-    }
+// fn get_first_trade_time(store: &StoreGetString, token_address: &str) -> Option<i64> {
+//     // 先检查代币是否被跟踪
+//     let token_key = format!("token:{}", token_address);
+//     if store.get_at(0, &token_key).is_none() {
+//         return None;
+//     }
 
-    // 直接获取最早交易时间
-    let first_trade_key = format!("first_trade:{}", token_address);
-    store
-        .get_at(0, &first_trade_key)
-        .and_then(|ts| ts.parse::<i64>().ok())
-}
+//     // 直接获取最早交易时间
+//     let first_trade_key = format!("first_trade:{}", token_address);
+//     store
+//         .get_at(0, &first_trade_key)
+//         .and_then(|ts| ts.parse::<i64>().ok())
+// }
 
 fn process_instruction_for_trades(
     instruction: &CompiledInstruction,

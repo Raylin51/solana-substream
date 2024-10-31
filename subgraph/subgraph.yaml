@@ -1,5 +1,7 @@
-specVersion: 0.0.5
-description: PumpFun Token Monitor
+specVersion: 1.0.0
+description: pumpfun-monitor Substreams-powered-Subgraph
+indexerHints:
+  prune: auto
 schema:
   file: ./schema.graphql
 dataSources:
@@ -9,11 +11,9 @@ dataSources:
     source:
       package:
         moduleName: map_trade_stats
-        file: pumpfun-monitor-v0.1.0.spkg
+        file: ../pumpfun-monitor-v0.1.0.spkg
     mapping:
+      apiVersion: 0.0.7
       kind: substreams/graph-entities
-      apiVersion: 0.0.5
-
-features:
-  - fullTextSearch
-  - nonFatalErrors
+      file: ./src/mappings.ts
+      handler: handleTriggers
