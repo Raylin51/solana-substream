@@ -32,15 +32,23 @@ pub struct TokenStats {
     #[prost(bool, tag="7")]
     pub meets_criteria: bool,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TradingSignals {
+    #[prost(message, repeated, tag="1")]
+    pub trading_signals: ::prost::alloc::vec::Vec<TradingSignal>,
+}
 /// 交易信号
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TradingSignal {
     #[prost(string, tag="1")]
     pub token_address: ::prost::alloc::string::String,
-    #[prost(message, optional, tag="2")]
-    pub stats: ::core::option::Option<TokenStats>,
+    #[prost(int64, tag="2")]
+    pub net_volume_5m: i64,
     #[prost(int64, tag="3")]
+    pub total_volume_15m: i64,
+    #[prost(int64, tag="4")]
     pub timestamp: i64,
 }
 // @@protoc_insertion_point(module)

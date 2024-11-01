@@ -1,19 +1,7 @@
-type Trade @entity {
-  id: ID! # format: "{tokenAddress}:{type}:{timestamp}"
-  tokenAddress: String!
-  amount: BigInt!
-  type: String! # "buy" or "sell"
-  timestamp: BigInt!
-}
-
 type TradingSignal @entity {
   id: ID! # format: "{tokenAddress}:{timestamp}"
-  data: String! # JSON string containing TokenStats
-  tokenAddress: String!
+  token_address: String!
+  net_volume_5m: BigInt!
+  total_volume_15m: BigInt!
   timestamp: BigInt!
-  netVolume5m: BigInt!
-  totalVolume15m: BigInt!
-  latestTradeType: String!
-  latestTradeAmount: BigInt!
-  meetsCriteria: Boolean!
 }

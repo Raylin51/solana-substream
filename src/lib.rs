@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use substreams::log;
 use substreams::store::{StoreGet, StoreGetString, StoreNew, StoreSet, StoreSetString};
@@ -38,6 +38,14 @@ struct TokenStats {
     latest_trade_type: String,
     latest_trade_amount: i64,
     meets_criteria: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct WindowStats {
+    window_start: i64,
+    net_amount: i64,
+    total_volume: i64,
+    latest_timestamp: i64,
 }
 
 #[substreams::handlers::map]
@@ -85,6 +93,12 @@ fn map_block_with_filtered_trades(
 
 #[substreams::handlers::store]
 pub fn store_token_creations(blk: Block, store: StoreSetString) {
+    let timestamp = blk
+        .block_time
+        .as_ref()
+        .map(|t| t.timestamp)
+        .unwrap_or_default();
+
     for tx in blk.transactions {
         if let Some(transaction) = tx.transaction {
             if let Some(message) = transaction.message {
@@ -113,7 +127,7 @@ pub fn store_token_creations(blk: Block, store: StoreSetString) {
                                     let mint = bs58::encode(&message.account_keys[mint_index])
                                         .into_string();
                                     log::debug!("Found create method, storing token: {}", mint);
-                                    store.set(0, &format!("token:{}", mint), &"1".to_string());
+                                    store.set(0, &format!("token:{}", mint), &timestamp.to_string());
                                 }
                             }
                         }
@@ -205,6 +219,7 @@ pub fn store_trade_data(changes: EntityChanges, store: StoreSetString) {
 pub fn map_trade_stats(
     changes: EntityChanges,
     trade_store: StoreGetString,
+    token_store: StoreGetString,
 ) -> Result<EntityChanges, substreams::errors::Error> {
     let mut tables = Tables::new();
     let mut current_block_trades: HashMap<String, Vec<Trade>> = HashMap::new();
@@ -270,9 +285,7 @@ pub fn map_trade_stats(
             continue;
         }
 
-        // 检查第一笔交易是否超过15分钟
-        let first_trade = all_trades.first().unwrap(); // 这里可以安全使用 unwrap 因为已经检查过空
-        if timestamp - first_trade.timestamp < 900 {
+        if !is_token_mature(&token_store, &token_address, timestamp) {
             // log::debug!(
             //     "Token {} history too short ({} seconds), skipping",
             //     token_address,
@@ -319,7 +332,7 @@ pub fn map_trade_stats(
         // 计算5分钟净流入量与15分钟总交易量的比值
         if net_volume_5m > 0 {
             let ratio = (net_volume_5m as f64 / total_volume_15m as f64).abs();
-            stats.meets_criteria = ratio >= 0.5;
+            stats.meets_criteria = ratio >= 0.9;
         }
 
         if stats.meets_criteria {
@@ -333,15 +346,28 @@ pub fn map_trade_stats(
                 log::debug!("notify");
                 tables
                     .create_row(
-                        "trading_signals",
+                        "TradingSignal",
                         format!("{}:{}", token_address, timestamp),
                     )
-                    .set("data", stats_json);
+                    .set("token_address", token_address)
+                    .set("net_volume_5m", stats.net_volume_5m)
+                    .set("total_volume_15m", stats.total_volume_15m)
+                    .set("timestamp", timestamp);
             }
         }
     }
 
     Ok(tables.to_entity_changes())
+}
+
+// 修改检查函数以使用新的存储格式
+fn is_token_mature(store: &StoreGetString, token: &str, current_timestamp: i64) -> bool {
+    if let Some(creation_time_str) = store.get_at(0, &format!("token:{}", token)) {
+        if let Ok(creation_time) = creation_time_str.parse::<i64>() {
+            return current_timestamp - creation_time >= 900; // 15分钟 = 900秒
+        }
+    }
+    false
 }
 
 fn get_trades_in_window(

@@ -60,6 +60,7 @@ modules:
     inputs:
       - map: map_trades
       - store: store_trade_data
+      - store: store_token_creations
     output:
       type: proto:sf.substreams.sink.entity.v1.EntityChanges
 

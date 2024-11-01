@@ -21,9 +21,14 @@ message TokenStats {
   bool meets_criteria = 7;
 }
 
+message TradingSignals {
+  repeated TradingSignal tradingSignals = 1;
+}
+
 // 交易信号
 message TradingSignal {
   string token_address = 1;
-  TokenStats stats = 2;
-  int64 timestamp = 3;
+  int64 net_volume_5m = 2;
+  int64 total_volume_15m = 3;
+  int64 timestamp = 4;
 }
