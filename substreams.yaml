@@ -44,23 +44,33 @@ modules:
     output:
       type: proto:sf.substreams.sink.entity.v1.EntityChanges
 
-  # 4. 存储处理后的交易数据
-  - name: store_trade_data
+  # 4. 存储 5m 窗口交易量
+  - name: store_5m_volume
     kind: store
     initialBlock: 290000000
-    updatePolicy: set
-    valueType: string  # 或者根据需要选择其他类型
+    updatePolicy: add
+    valueType: int64  # 或者根据需要选择其他类型
     inputs:
       - map: map_trades
 
-  # 5. 最终的统计和检查
+  # 5. 存储 15m 窗口交易量
+  - name: store_15m_volume
+    kind: store
+    initialBlock: 290000000
+    updatePolicy: add
+    valueType: int64  # 或者根据需要选择其他类型
+    inputs:
+      - map: map_trades
+
+  # 6. 最终的统计和检查
   - name: map_trade_stats
     kind: map
     initialBlock: 290000000
     inputs:
       - map: map_trades
-      - store: store_trade_data
       - store: store_token_creations
+      - store: store_5m_volume
+      - store: store_15m_volume
     output:
       type: proto:sf.substreams.sink.entity.v1.EntityChanges
 
