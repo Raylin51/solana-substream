@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use substreams::log;
 use substreams::store::{
-    StoreAdd, StoreAddInt64, StoreGet, StoreGetInt64, StoreGetString, StoreNew, StoreSet, StoreSetString
+    StoreAdd, StoreAddInt64, StoreGet, StoreGetInt64, StoreGetString, StoreNew, StoreSet,
+    StoreSetString,
 };
 use substreams_entity_change::pb::entity::{value, EntityChanges};
 use substreams_entity_change::tables::Tables;
@@ -148,6 +149,7 @@ pub fn map_trades(
     for tx in &blk.transactions {
         if let (Some(transaction), Some(meta)) = (tx.transaction.as_ref(), tx.meta.as_ref()) {
             if let Some(message) = transaction.message.as_ref() {
+                // 处理主 instructions
                 for instruction in &message.instructions {
                     if let Some(trade) = process_instruction_for_trades(
                         instruction,
@@ -157,53 +159,27 @@ pub fn map_trades(
                         timestamp,
                         transaction,
                     )? {
-                        // 获取token创建时间戳
-                        if let Some(creation_time_str) =
-                            token_store.get_at(0, &format!("token:{}", trade.token_address))
-                        {
-                            if let Ok(creation_ts) = creation_time_str.parse::<i64>() {
-                                // 计算5分钟窗口
-                                let window_5m = 300; // 5分钟 = 300秒
-                                let elapsed_5m = timestamp - creation_ts;
-                                let n_5m = elapsed_5m / window_5m;
-                                let window_start_5m = creation_ts + n_5m * window_5m;
+                        process_trade(&mut tables, trade, timestamp, &token_store)?;
+                    }
+                }
 
-                                // 计算15分钟窗口
-                                let window_15m = 900; // 15分钟 = 900秒
-                                let elapsed_15m = timestamp - creation_ts;
-                                let n_15m = elapsed_15m / window_15m;
-                                let window_start_15m = creation_ts + n_15m * window_15m;
-
-                                // 计算交易金额
-                                let net_amount = trade.amount;
-                                let total_amount = trade.amount.abs();
-
-                                // 5分钟窗口的 keys
-                                let net_key_5m =
-                                    format!("{}:{}:net", trade.token_address, window_start_5m);
-                                let total_key_5m =
-                                    format!("{}:{}:total", trade.token_address, window_start_5m);
-
-                                // 15分钟窗口的 keys
-                                let net_key_15m =
-                                    format!("{}:{}:net", trade.token_address, window_start_15m);
-                                let total_key_15m =
-                                    format!("{}:{}:total", trade.token_address, window_start_15m);
-
-                                // 创建实体变更
-                                tables
-                                    .create_row("volume_5m", net_key_5m)
-                                    .set("amount", net_amount.to_string());
-                                tables
-                                    .create_row("volume_5m", total_key_5m)
-                                    .set("amount", total_amount.to_string());
-                                tables
-                                    .create_row("volume_15m", net_key_15m)
-                                    .set("amount", net_amount.to_string());
-                                tables
-                                    .create_row("volume_15m", total_key_15m)
-                                    .set("amount", total_amount.to_string());
-                            }
+                // 处理 inner instructions
+                for inner_instruction in &meta.inner_instructions {
+                    for instruction in &inner_instruction.instructions {
+                        let compiled = CompiledInstruction {
+                            program_id_index: instruction.program_id_index,
+                            accounts: instruction.accounts.clone(),
+                            data: instruction.data.clone(),
+                        };
+                        if let Some(trade) = process_instruction_for_trades(
+                            &compiled,
+                            message,
+                            meta,
+                            &token_store,
+                            timestamp,
+                            transaction,
+                        )? {
+                            process_trade(&mut tables, trade, timestamp, &token_store)?;
                         }
                     }
                 }
@@ -303,7 +279,10 @@ pub fn map_trade_stats(
                     None => 0,
                 };
 
-                log::debug!("5m net volume: {}sol", (net_volume_5m as f64) / 1000000000.0);
+                log::debug!(
+                    "5m net volume: {}sol",
+                    (net_volume_5m as f64) / 1000000000.0
+                );
 
                 // 获取 15 分钟总交易量
                 let mut total_volume_15m = 0i64;
@@ -314,7 +293,10 @@ pub fn map_trade_stats(
                     total_volume_15m = amount;
                 }
 
-                log::debug!("15m total volume: {}sol", (total_volume_15m as f64) / 1000000000.0);
+                log::debug!(
+                    "15m total volume: {}sol",
+                    (total_volume_15m as f64) / 1000000000.0
+                );
 
                 // 检查是否满足信号条件
                 if net_volume_5m > 3000000000 && total_volume_15m > 0 {
@@ -324,7 +306,7 @@ pub fn map_trade_stats(
                             "Found signal for token: {}, 5m net volume: {}, 15m total volume: {}",
                             token_address,
                             net_volume_5m,
-                            total_volume_15m
+                            total_volume_15m,
                         );
 
                         tables
@@ -343,6 +325,59 @@ pub fn map_trade_stats(
     }
 
     Ok(tables.to_entity_changes())
+}
+
+fn process_trade(
+    tables: &mut Tables,
+    trade: Trade,
+    timestamp: i64,
+    token_store: &StoreGetString,
+) -> Result<(), substreams::errors::Error> {
+    // 获取token创建时间戳
+    if let Some(creation_time_str) =
+        token_store.get_at(0, &format!("token:{}", trade.token_address))
+    {
+        if let Ok(creation_ts) = creation_time_str.parse::<i64>() {
+            // 计算5分钟窗口
+            let window_5m = 300; // 5分钟 = 300秒
+            let elapsed_5m = timestamp - creation_ts;
+            let n_5m = elapsed_5m / window_5m;
+            let window_start_5m = creation_ts + n_5m * window_5m;
+
+            // 计算15分钟窗口
+            let window_15m = 900; // 15分钟 = 900秒
+            let elapsed_15m = timestamp - creation_ts;
+            let n_15m = elapsed_15m / window_15m;
+            let window_start_15m = creation_ts + n_15m * window_15m;
+
+            // 计算交易金额
+            let net_amount = trade.amount;
+            let total_amount = trade.amount.abs();
+
+            // 5分钟窗口的 keys
+            let net_key_5m = format!("{}:{}:net", trade.token_address, window_start_5m);
+            let total_key_5m = format!("{}:{}:total", trade.token_address, window_start_5m);
+
+            // 15分钟窗口的 keys
+            let net_key_15m = format!("{}:{}:net", trade.token_address, window_start_15m);
+            let total_key_15m = format!("{}:{}:total", trade.token_address, window_start_15m);
+
+            // 创建实体变更
+            tables
+                .create_row("volume_5m", net_key_5m)
+                .set("amount", net_amount.to_string());
+            tables
+                .create_row("volume_5m", total_key_5m)
+                .set("amount", total_amount.to_string());
+            tables
+                .create_row("volume_15m", net_key_15m)
+                .set("amount", net_amount.to_string());
+            tables
+                .create_row("volume_15m", total_key_15m)
+                .set("amount", total_amount.to_string());
+        }
+    }
+    Ok(())
 }
 
 fn process_instruction_for_trades(
